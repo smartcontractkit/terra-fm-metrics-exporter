@@ -3,6 +3,7 @@ package exporter
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -19,6 +20,7 @@ import (
 	tmrpc "github.com/tendermint/tendermint/rpc/client/http"
 	tmTypes "github.com/tendermint/tendermint/types"
 	wasmTypes "github.com/terra-money/core/x/wasm/types"
+	"github.com/tidwall/gjson"
 	"google.golang.org/grpc"
 )
 
@@ -158,6 +160,7 @@ func NewWasmClient() (wasmClient wasmTypes.QueryClient, err error) {
 
 func NewTendermintClient() (*tmrpc.HTTP, error) {
 	client, err := tmrpc.New(TENDERMINT_URL, "/websocket")
+	fmt.Println(TENDERMINT_URL)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +173,23 @@ func NewTendermintClient() (*tmrpc.HTTP, error) {
 }
 
 func GetConfig(feeds map[string]types.FeedConfig) error {
-	var config []types.FeedConfig
+	// var config []types.FeedConfig
+	// response, err := http.Get(CONFIG_URL)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// err = json.NewDecoder(response.Body).Decode(&config)
+	// defer response.Body.Close()
+
+	// if err != nil {
+	// 	return err
+	// }
+
+	// for _, feed := range config {
+	// 	feeds[feed.ContractAddress] = feed
+	// }
+	var config json.RawMessage
 	response, err := http.Get(CONFIG_URL)
 	if err != nil {
 		return err
@@ -178,14 +197,26 @@ func GetConfig(feeds map[string]types.FeedConfig) error {
 
 	err = json.NewDecoder(response.Body).Decode(&config)
 	defer response.Body.Close()
+	contracts := gjson.GetBytes(config, "contracts")
+	// fmt.Println(contracts)
 
 	if err != nil {
 		return err
 	}
+	contracts.ForEach(func(key, value gjson.Result) bool {
+		// fmt.Println(key.String())
 
-	for _, feed := range config {
-		feeds[feed.ContractAddress] = feed
-	}
+		// fmt.Println(value.String())
+		var feed types.FeedConfig
+
+		json.Unmarshal([]byte(value.String()), &feed)
+		feed.ContractAddress = key.String()
+
+		feeds[key.String()] = feed
+		fmt.Println(feeds)
+
+		return true // keep iterating
+	})
 
 	return nil
 }
@@ -263,22 +294,22 @@ func NewExporter(l log.Logger, ch chan types.Message, kafka *kafka.Writer, polli
 }
 
 func (e *Exporter) subscribeFeed(ch chan types.Message, logger log.Logger, manager *manager.FeedManager) error {
-	aggregator, err := manager.GetAggregator(e.WasmClient)
-	if err != nil {
-		level.Error(logger).Log("msg", "Could not get the aggregator address", "err", err)
-		return err
-	}
+	// aggregator, err := manager.GetAggregator(e.WasmClient)
+	// if err != nil {
+	// 	level.Error(logger).Log("msg", "Could not get the aggregator address", "err", err)
+	// 	return err
+	// }
 	// update the feed
-	manager.Feed.Aggregator = *aggregator
+	// manager.Feed.Aggregator = *aggregator
 
 	// sub proxy first
-	err = manager.Subscribe(ch, logger, manager.Feed.ContractAddress)
-	if err != nil {
-		return err
-	}
+	// err := manager.Subscribe(ch, logger, manager.Feed.ContractAddress)
+	// if err != nil {
+	// 	return err
+	// }
 
 	// sub aggregator
-	err = manager.Subscribe(ch, logger, manager.Feed.Aggregator)
+	err := manager.Subscribe(ch, logger, manager.Feed.ContractAddress)
 	if err != nil {
 		return err
 	}

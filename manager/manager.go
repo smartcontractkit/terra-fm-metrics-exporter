@@ -81,17 +81,17 @@ func (fm *FeedManager) GetAggregator(wasmClient wasmTypes.QueryClient) (aggregat
 }
 
 func (fm *FeedManager) UpdateFeed(wasmClient wasmTypes.QueryClient, logger log.Logger, newConfig types.FeedConfig) {
-	aggregator, err := fm.GetAggregator(wasmClient)
-	if err != nil {
-		level.Error(logger).Log("msg", "Could not get the aggregator address", "err", err)
-		return
-	}
+	// aggregator, err := fm.GetAggregator(wasmClient)
+	// if err != nil {
+	// 	level.Error(logger).Log("msg", "Could not get the aggregator address", "err", err)
+	// 	return
+	// }
 	// Check if any of feed configurations have changed ignoring the Aggregator field
 	res := cmp.Equal(fm.Feed, newConfig, cmpopts.IgnoreFields(fm.Feed, "Aggregator"))
 	// if either changed we need to update and resubscribe
 	if !res {
 		level.Info(logger).Log("msg", "Feed configuration has changed")
-		newConfig.Aggregator = *aggregator
+		// newConfig.Aggregator = *aggregator
 		fm.Feed = newConfig
 	}
 }

@@ -120,7 +120,7 @@ type TxInfo struct {
 type FeedConfig struct {
 	ContractAddress string   `json:"contractAddress"`
 	ContractVersion int      `json:"contractVersion"`
-	DecimalPlaces   int      `json:"decimalPlaces"`
+	DecimalPlaces   int      `json:"decimals"`
 	Heartbeat       int64    `json:"heartbeat"`
 	History         bool     `json:"history"`
 	Multiply        string   `json:"multiply"`

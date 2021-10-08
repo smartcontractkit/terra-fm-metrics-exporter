@@ -10,6 +10,7 @@ require (
 	github.com/segmentio/kafka-go v0.4.17
 	github.com/tendermint/tendermint v0.34.12
 	github.com/terra-money/core v0.5.4
+	github.com/tidwall/gjson v1.9.2 // indirect
 	google.golang.org/grpc v1.39.0
 )
 
