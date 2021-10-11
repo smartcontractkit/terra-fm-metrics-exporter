@@ -300,7 +300,7 @@ func (e *Exporter) subscribeFeed(ch chan types.Message, logger log.Logger, manag
 	// 	return err
 	// }
 	// update the feed
-	// manager.Feed.Aggregator = *aggregator
+	manager.Feed.Aggregator = manager.Feed.ContractAddress
 
 	// sub proxy first
 	// err := manager.Subscribe(ch, logger, manager.Feed.ContractAddress)
