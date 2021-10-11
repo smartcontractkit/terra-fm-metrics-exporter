@@ -355,9 +355,6 @@ func (e *Exporter) setContractMetadata(proxyAddr string) {
 }
 
 func (e *Exporter) fetchNodeMetrics() {
-	e.mutex.RLock()
-	defer e.mutex.RUnlock()
-
 	status, err := e.TendermintClient.Status(context.TODO())
 	if err != nil {
 		level.Error(e.logger).Log("msg", "Can't get the node status", "err", err)
@@ -399,7 +396,6 @@ func (e *Exporter) writeToKafka(key string, value interface{}) error {
 
 func (e *Exporter) storeEvents(out chan types.Message) {
 	handler := func(event types.EventRecords) {
-		e.mutex.Lock()
 		for _, round := range event.NewRound {
 			err := e.writeToKafka("NewRound", round)
 			if err != nil {
@@ -453,6 +449,7 @@ func (e *Exporter) storeEvents(out chan types.Message) {
 			}).Inc()
 			e.answersGauge.WithLabelValues(update.Feed).Set(float64(update.Value.Key.Int64()))
 		}
+		e.mutex.Lock()
 		for _, confirm := range event.ConfirmAggregator {
 			feed := e.managers[confirm.Feed].Feed
 			// This event indicates that the aggregator address for a feed has changed
