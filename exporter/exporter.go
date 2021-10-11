@@ -343,7 +343,7 @@ func (e *Exporter) setContractMetadata(proxyAddr string) {
 
 	e.contractMetadataGauge.WithLabelValues(
 		status.NodeInfo.Network,
-		feed.Aggregator,
+		feed.ContractAddress,
 		feed.Status,
 		ContractType,
 		feed.Name,
