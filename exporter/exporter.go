@@ -263,22 +263,9 @@ func NewExporter(l log.Logger, ch chan types.Message, kafka *kafka.Writer, polli
 }
 
 func (e *Exporter) subscribeFeed(ch chan types.Message, logger log.Logger, manager *manager.FeedManager) error {
-	aggregator, err := manager.GetAggregator(e.WasmClient)
-	if err != nil {
-		level.Error(logger).Log("msg", "Could not get the aggregator address", "err", err)
-		return err
-	}
-	// update the feed
-	manager.Feed.Aggregator = *aggregator
 
-	// sub proxy first
-	err = manager.Subscribe(ch, logger, manager.Feed.ContractAddress)
-	if err != nil {
-		return err
-	}
-
-	// sub aggregator
-	err = manager.Subscribe(ch, logger, manager.Feed.Aggregator)
+	// subscribe to aggregator
+	err := manager.Subscribe(ch, logger, manager.Feed.ContractAddress)
 	if err != nil {
 		return err
 	}
@@ -312,7 +299,7 @@ func (e *Exporter) setContractMetadata(proxyAddr string) {
 
 	e.contractMetadataGauge.WithLabelValues(
 		status.NodeInfo.Network,
-		feed.Aggregator,
+		feed.ContractAddress,
 		feed.Status,
 		ContractType,
 		feed.Name,
@@ -423,14 +410,13 @@ func (e *Exporter) storeEvents(out chan types.Message) {
 			feed := e.managers[confirm.Feed].Feed
 			// This event indicates that the aggregator address for a feed has changed
 			// So we need to unsubscribe from old aggregator's events
-			err := e.managers[confirm.Feed].Unsubscribe(e.logger, feed.Aggregator)
+			err := e.managers[confirm.Feed].Unsubscribe(e.logger, feed.ContractAddress)
 			if err != nil {
 				level.Error(e.logger).Log("msg", "Could not unsubscribe old aggregator", "err", err)
 				continue
 			}
 
 			// Update the feed's aggregator
-			feed.Aggregator = confirm.NewAggregator
 			e.managers[confirm.Feed].Feed = feed
 
 			// And subscribe to new aggregator's events
@@ -501,7 +487,7 @@ func (e *Exporter) poll() {
 				}
 			}
 			// if the feed exists, update the config
-			e.managers[feed.ContractAddress].UpdateFeed(e.WasmClient, e.logger, feed)
+			e.managers[feed.ContractAddress].UpdateFeed(e.logger, feed)
 			go e.setContractMetadata(feed.ContractAddress)
 			e.mutex.Unlock()
 		}
